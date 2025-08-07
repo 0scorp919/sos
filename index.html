@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>sos.minddrive.life – аварійний доступ</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            background: #14181d;
+            color: #e0e0e0;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            max-width: 400px;
+            background: #23272e;
+            padding: 32px;
+            border-radius: 18px;
+            box-shadow: 0 4px 32px #0006;
+        }
+        img.logo {
+            width: 120px;
+            margin-bottom: 24px;
+            filter: drop-shadow(0 0 12px #fff4);
+        }
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 12px;
+            font-weight: bold;
+        }
+        .desc {
+            color: #ccc;
+            margin-bottom: 32px;
+        }
+        button {
+            background: #4cbeff;
+            color: #fff;
+            padding: 12px 36px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 7px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background: #1fa1ff;
+        }
+        .error {
+            color: #ff4c4c;
+            margin-top: 14px;
+        }
+        .data-block {
+            margin-top: 28px;
+            padding: 18px;
+            background: #181c22;
+            border-radius: 9px;
+            text-align: left;
+            word-break: break-all;
+        }
+        .links {
+            margin-top: 32px;
+            color: #b6b6b6;
+        }
+        .links a {
+            color: #74cfff;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="logo.png" class="logo" alt="MindDrive.Life Logo">
+        <h1>Аварійний доступ до проєкту MindDrive.Life</h1>
+        <div class="desc">
+            Для доступу потрібен <b>YubiKey 1</b> або <b>YubiKey 2</b>.<br>
+            Після підтвердження ключа дані розшифруються у браузері.<br>
+            <span style="color:#5effb8">Все працює без сервера. Дані не покидають пристрій.</span>
+        </div>
+        <button id="loginBtn">Увійти через YubiKey</button>
+        <div id="errorMsg" class="error"></div>
+        <div id="secretData" class="data-block" style="display:none"></div>
+        <div class="links">
+            <div>Піддомен: <a href="https://sos.minddrive.life" target="_blank">sos.minddrive.life</a></div>
+            <div>GitHub Pages: <a href="https://0scorp919.github.io/sos" target="_blank">0scorp919.github.io/sos</a></div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
