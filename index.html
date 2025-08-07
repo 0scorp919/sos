@@ -103,7 +103,6 @@
             border-radius: 2px;
             vertical-align: middle;
         }
-        /* Менший шрифт для польської */
         body.pl .container, body.pl h1, body.pl .desc, body.pl .desc-green {
             font-size: 0.92em !important;
         }
@@ -130,6 +129,22 @@
                 margin-top: 18px;
             }
         }
+        /* Step fields */
+        input[type="text"].otp-input {
+            font-size: 1.3em;
+            padding: 7px 16px;
+            width: 120px;
+            text-align: center;
+            margin-top: 7px;
+            border-radius: 6px;
+            border: 1px solid #444;
+            background: #1d232b;
+            color: #eee;
+        }
+        .step-btn {
+            margin-left: 10px;
+            padding: 8px 28px;
+        }
     </style>
 </head>
 <body>
@@ -149,6 +164,25 @@
             Все працює без сервера. Дані не покидають пристрій.
         </div>
         <button id="webAuthnBtn" onclick="startAuth()">Увійти через YubiKey</button>
+        <!-- Step 1: OTP1 -->
+        <div id="step-otp1" style="display:none;">
+            <div class="desc" id="otp1Desc"></div>
+            <input type="text" id="otp1" maxlength="6" inputmode="numeric" class="otp-input">
+            <button class="step-btn" onclick="submitOtp1()">OK</button>
+            <div class="desc" id="otp1Err" style="color:#ff6262;margin-top:8px"></div>
+        </div>
+        <!-- Step 2: OTP2 -->
+        <div id="step-otp2" style="display:none;">
+            <div class="desc" id="otp2Desc"></div>
+            <input type="text" id="otp2" maxlength="6" inputmode="numeric" class="otp-input">
+            <button class="step-btn" onclick="submitOtp2()">OK</button>
+            <div class="desc" id="otp2Err" style="color:#ff6262;margin-top:8px"></div>
+        </div>
+        <!-- Final secrets -->
+        <div id="finalSecrets" style="display:none;margin-top:24px;">
+            <div class="desc" id="secretsTitle"></div>
+            <pre style="margin-top:10px;color:#37ee93;font-weight:bold;background:#1a212a;padding:12px 10px 12px 10px;border-radius:8px;overflow:auto;" id="secretsData"></pre>
+        </div>
         <div class="links">
             <div>Піддомен: <a href="https://sos.minddrive.life" target="_blank">sos.minddrive.life</a></div>
             <div>GitHub Pages: <a href="https://0scorp919.github.io/sos" target="_blank">0scorp919.github.io/sos</a></div>
@@ -162,6 +196,10 @@
                 mainDesc: "Для доступу потрібен <b>YubiKey 1</b> або <b>YubiKey 2</b>.<br>Після підтвердження ключа дані розшифруються у браузері.",
                 mainGreen: "Все працює без сервера. Дані не покидають пристрій.",
                 webAuthnBtn: "Увійти через YubiKey",
+                otp1Desc: "Крок 1. Введіть OTP-код із першого рівня (YubiKey).",
+                otp2Desc: "Крок 2. Введіть OTP-код із другого рівня (YubiKey).",
+                otpErr: "Неправильний код або ключ!",
+                secretsTitle: "Твої аварійні секрети:",
                 domainLabel: "Піддомен:",
                 ghLabel: "GitHub Pages:"
             },
@@ -170,6 +208,10 @@
                 mainDesc: "You need <b>YubiKey 1</b> or <b>YubiKey 2</b> for access.<br>After authentication, data will be decrypted in your browser.",
                 mainGreen: "Works fully offline. Your data never leaves your device.",
                 webAuthnBtn: "Login with YubiKey",
+                otp1Desc: "Step 1. Enter the OTP code (level 1) from your YubiKey.",
+                otp2Desc: "Step 2. Enter the OTP code (level 2) from your YubiKey.",
+                otpErr: "Incorrect code or key!",
+                secretsTitle: "Your emergency secrets:",
                 domainLabel: "Subdomain:",
                 ghLabel: "GitHub Pages:"
             },
@@ -178,6 +220,10 @@
                 mainDesc: "Aby uzyskać dostęp, potrzebujesz <b>YubiKey 1</b> lub <b>YubiKey 2</b>.<br>Po uwierzytelnieniu dane zostaną odszyfrowane w przeglądarce.",
                 mainGreen: "Działa bez serwera. Dane nie opuszczają urządzenia.",
                 webAuthnBtn: "Zaloguj się przez YubiKey",
+                otp1Desc: "Krok 1. Wprowadź kod OTP (poziom 1) z YubiKey.",
+                otp2Desc: "Krok 2. Wprowadź kod OTP (poziom 2) z YubiKey.",
+                otpErr: "Nieprawidłowy kod lub klucz!",
+                secretsTitle: "Twoje awaryjne sekrety:",
                 domainLabel: "Subdomena:",
                 ghLabel: "GitHub Pages:"
             }
@@ -203,6 +249,9 @@
             document.getElementById('mainDesc').innerHTML = langData[lang].mainDesc;
             document.getElementById('mainGreen').innerHTML = langData[lang].mainGreen;
             document.getElementById('webAuthnBtn').innerHTML = langData[lang].webAuthnBtn;
+            document.getElementById('otp1Desc').innerHTML = langData[lang].otp1Desc;
+            document.getElementById('otp2Desc').innerHTML = langData[lang].otp2Desc;
+            document.getElementById('secretsTitle').innerHTML = langData[lang].secretsTitle;
             document.querySelector('.links div:first-child').innerHTML = langData[lang].domainLabel + ' <a href="https://sos.minddrive.life" target="_blank">sos.minddrive.life</a>';
             document.querySelector('.links div:last-child').innerHTML = langData[lang].ghLabel + ' <a href="https://0scorp919.github.io/sos" target="_blank">0scorp919.github.io/sos</a>';
         }
@@ -212,8 +261,81 @@
             setLang(defaultLang);
         });
 
+        // --- AES+PBKDF2 функції ---
+        async function deriveKeyFromOtp(otp) {
+            const salt = new TextEncoder().encode("sos-minddrive.life");
+            const keyMaterial = await window.crypto.subtle.importKey(
+                "raw", new TextEncoder().encode(otp), {name: "PBKDF2"}, false, ["deriveKey"]);
+            return await window.crypto.subtle.deriveKey(
+                {name: "PBKDF2", salt: salt, iterations: 100000, hash: "SHA-256"},
+                keyMaterial, {name: "AES-GCM", length: 256}, false, ["decrypt"]);
+        }
+        async function decryptAes(cipherB64, ivB64, key) {
+            const cipher = Uint8Array.from(atob(cipherB64), c => c.charCodeAt(0));
+            const iv = Uint8Array.from(atob(ivB64), c => c.charCodeAt(0));
+            const result = await window.crypto.subtle.decrypt(
+                {name: "AES-GCM", iv: iv}, key, cipher
+            );
+            return new TextDecoder().decode(result);
+        }
+
+        // --- Зашифровані блоки ---
+        const encryptedKey2 = {
+          cipher: "Ns+K+nm6TtAl6US2WCRylzSLHGoJ9AhAfAr6JAmrKcPXTpPqbI8=",
+          iv: "KZz0GGmKpZqMZAY3"
+        };
+        const encryptedFinalKey = {
+          cipher: "tclsm/PU6y0a7dIbAFJlf3nXKuS6pB7kYpPtfZ06BznM8uD4VX8=",
+          iv: "YOf7gdacTAdl65Wx"
+        };
+        const encryptedSecrets = {
+          cipher: "BWn2wr6jz01oYVnnoPsmqHzg9PgXtzCQD8lHt9Q5nFwr7kBzJdBThMYpJr8YtuZxRxpj1XhzjVsJkvwKtwYyMWEm1bhd4MIrZ5bUK/7LuWylkK7B3zo=",
+          iv: "q+1U0LczV9fL6CVI"
+        };
+
+        // --- WebAuthn (для демо, поки тільки імітація) ---
         function startAuth() {
-            alert('WebAuthn і OTP тут буде наступним кроком!');
+            // Тут має бути реальна перевірка WebAuthn/YubiKey
+            // Для демо — одразу переходимо до otp1
+            document.getElementById('webAuthnBtn').style.display = "none";
+            document.getElementById('step-otp1').style.display = "";
+            document.getElementById('otp1Err').innerHTML = "";
+            document.getElementById('otp1').value = "";
+            document.getElementById('otp2Err').innerHTML = "";
+            document.getElementById('otp2').value = "";
+            document.getElementById('finalSecrets').style.display = "none";
+        }
+
+        function submitOtp1() {
+            let otp1 = document.getElementById("otp1").value.trim();
+            deriveKeyFromOtp(otp1).then(async key1 => {
+                try {
+                    let key2 = await decryptAes(encryptedKey2.cipher, encryptedKey2.iv, key1);
+                    window.level2key = key2;
+                    document.getElementById("step-otp1").style.display = "none";
+                    document.getElementById("step-otp2").style.display = "";
+                    document.getElementById('otp2Err').innerHTML = "";
+                    document.getElementById('otp2').value = "";
+                } catch (e) {
+                    document.getElementById("otp1Err").innerHTML = langData[currentLang].otpErr;
+                }
+            });
+        }
+
+        function submitOtp2() {
+            let otp2 = document.getElementById("otp2").value.trim();
+            deriveKeyFromOtp(otp2).then(async key2 => {
+                try {
+                    let keyFinal = await decryptAes(encryptedFinalKey.cipher, encryptedFinalKey.iv, key2);
+                    let secretsKey = await window.crypto.subtle.importKey("raw", new TextEncoder().encode(keyFinal), {name: "AES-GCM"}, false, ["decrypt"]);
+                    let secrets = await decryptAes(encryptedSecrets.cipher, encryptedSecrets.iv, secretsKey);
+                    document.getElementById("step-otp2").style.display = "none";
+                    document.getElementById("finalSecrets").style.display = "";
+                    document.getElementById("secretsData").innerText = secrets;
+                } catch (e) {
+                    document.getElementById("otp2Err").innerHTML = langData[currentLang].otpErr;
+                }
+            });
         }
     </script>
 </body>
