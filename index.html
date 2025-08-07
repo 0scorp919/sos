@@ -23,6 +23,7 @@
             padding: 32px;
             border-radius: 18px;
             box-shadow: 0 4px 32px #0006;
+            position: relative;
         }
         img.logo {
             width: 120px;
@@ -36,6 +37,10 @@
         }
         .desc {
             color: #ccc;
+            margin-bottom: 12px;
+        }
+        .desc-green {
+            color: #37ee93;
             margin-bottom: 32px;
         }
         button {
@@ -51,18 +56,6 @@
         button:hover {
             background: #1fa1ff;
         }
-        .error {
-            color: #ff4c4c;
-            margin-top: 14px;
-        }
-        .data-block {
-            margin-top: 28px;
-            padding: 18px;
-            background: #181c22;
-            border-radius: 9px;
-            text-align: left;
-            word-break: break-all;
-        }
         .links {
             margin-top: 32px;
             color: #b6b6b6;
@@ -71,25 +64,117 @@
             color: #74cfff;
             text-decoration: underline;
         }
+        #lang-switcher {
+            position: absolute;
+            top: 20px;
+            right: 24px;
+        }
+        #lang-switcher button {
+            background: #23272e;
+            color: #aaa;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 4px 12px;
+            margin-left: 6px;
+            font-size: 0.95em;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+        }
+        #lang-switcher button.active,
+        #lang-switcher button:hover {
+            background: #4cbeff;
+            color: #fff;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <img src="logo.png" class="logo" alt="MindDrive.Life Logo">
-        <h1>Аварійний доступ до проєкту MindDrive.Life</h1>
-        <div class="desc">
-            Для доступу потрібен <b>YubiKey 1</b> або <b>YubiKey 2</b>.<br>
-            Після підтвердження ключа дані розшифруються у браузері.<br>
-            <span style="color:#5effb8">Все працює без сервера. Дані не покидають пристрій.</span>
+        <div id="lang-switcher">
+            <button id="lang-ua" onclick="setLang('ua')">UA</button>
+            <button id="lang-en" onclick="setLang('en')">EN</button>
+            <button id="lang-pl" onclick="setLang('pl')">PL</button>
         </div>
-        <button id="loginBtn">Увійти через YubiKey</button>
-        <div id="errorMsg" class="error"></div>
-        <div id="secretData" class="data-block" style="display:none"></div>
+        <img src="logo.png" class="logo" alt="MindDrive.Life Logo">
+        <h1 id="mainTitle">Аварійний доступ до проєкту MindDrive.Life</h1>
+        <div class="desc" id="mainDesc">
+            Для доступу потрібен <b>YubiKey 1</b> або <b>YubiKey 2</b>.<br>
+            Після підтвердження ключа дані розшифруються у браузері.
+        </div>
+        <div class="desc-green" id="mainGreen">
+            Все працює без сервера. Дані не покидають пристрій.
+        </div>
+        <button id="webAuthnBtn" onclick="startAuth()">Увійти через YubiKey</button>
         <div class="links">
             <div>Піддомен: <a href="https://sos.minddrive.life" target="_blank">sos.minddrive.life</a></div>
             <div>GitHub Pages: <a href="https://0scorp919.github.io/sos" target="_blank">0scorp919.github.io/sos</a></div>
         </div>
     </div>
-    <script src="script.js"></script>
+    <script>
+        // Мовні дані
+        const langData = {
+            ua: {
+                mainTitle: "Аварійний доступ до проєкту MindDrive.Life",
+                mainDesc: "Для доступу потрібен <b>YubiKey 1</b> або <b>YubiKey 2</b>.<br>Після підтвердження ключа дані розшифруються у браузері.",
+                mainGreen: "Все працює без сервера. Дані не покидають пристрій.",
+                webAuthnBtn: "Увійти через YubiKey",
+                domainLabel: "Піддомен:",
+                ghLabel: "GitHub Pages:"
+            },
+            en: {
+                mainTitle: "Emergency Access to MindDrive.Life",
+                mainDesc: "You need <b>YubiKey 1</b> or <b>YubiKey 2</b> for access.<br>After authentication, data will be decrypted in your browser.",
+                mainGreen: "Works fully offline. Your data never leaves your device.",
+                webAuthnBtn: "Login with YubiKey",
+                domainLabel: "Subdomain:",
+                ghLabel: "GitHub Pages:"
+            },
+            pl: {
+                mainTitle: "Dostęp awaryjny do projektu MindDrive.Life",
+                mainDesc: "Aby uzyskać dostęp, potrzebujesz <b>YubiKey 1</b> lub <b>YubiKey 2</b>.<br>Po uwierzytelnieniu dane zostaną odszyfrowane w przeglądarce.",
+                mainGreen: "Działa bez serwera. Dane nie opuszczają urządzenia.",
+                webAuthnBtn: "Zaloguj się przez YubiKey",
+                domainLabel: "Subdomena:",
+                ghLabel: "GitHub Pages:"
+            }
+        };
+
+        // Детекція мови браузера
+        function getBrowserLang() {
+            const lang = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
+            if (lang.startsWith('uk')) return 'ua';
+            if (lang.startsWith('pl')) return 'pl';
+            if (lang.startsWith('en')) return 'en';
+            return 'en';
+        }
+
+        // Встановлення мови
+        function setLang(lang) {
+            window.currentLang = lang;
+            // Кнопки
+            ['ua', 'en', 'pl'].forEach(l => {
+                document.getElementById('lang-' + l).classList.remove('active');
+            });
+            document.getElementById('lang-' + lang).classList.add('active');
+            // Тексти
+            document.getElementById('mainTitle').innerHTML = langData[lang].mainTitle;
+            document.getElementById('mainDesc').innerHTML = langData[lang].mainDesc;
+            document.getElementById('mainGreen').innerHTML = langData[lang].mainGreen;
+            document.getElementById('webAuthnBtn').innerHTML = langData[lang].webAuthnBtn;
+            // Лінки — за потреби
+            document.querySelector('.links div:first-child').innerHTML = langData[lang].domainLabel + ' <a href="https://sos.minddrive.life" target="_blank">sos.minddrive.life</a>';
+            document.querySelector('.links div:last-child').innerHTML = langData[lang].ghLabel + ' <a href="https://0scorp919.github.io/sos" target="_blank">0scorp919.github.io/sos</a>';
+        }
+
+        // При завантаженні
+        document.addEventListener('DOMContentLoaded', function() {
+            let defaultLang = getBrowserLang();
+            setLang(defaultLang);
+        });
+
+        // Твоя функція для WebAuthn
+        function startAuth() {
+            alert('WebAuthn і OTP тут буде наступним кроком!');
+        }
+    </script>
 </body>
 </html>
