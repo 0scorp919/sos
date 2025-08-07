@@ -18,9 +18,9 @@
         }
         .container {
             text-align: center;
-            max-width: 400px;
+            max-width: 430px;
             background: #23272e;
-            padding: 32px;
+            padding: 32px 20px 32px 20px;
             border-radius: 18px;
             box-shadow: 0 4px 32px #0006;
             position: relative;
@@ -29,19 +29,23 @@
             width: 120px;
             margin-bottom: 24px;
             filter: drop-shadow(0 0 12px #fff4);
+            margin-top: 24px;
         }
         h1 {
-            font-size: 1.5rem;
+            font-size: 1.45rem;
             margin-bottom: 12px;
             font-weight: bold;
         }
         .desc {
             color: #ccc;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
+            font-size: 1.08em;
+            line-height: 1.25;
         }
         .desc-green {
             color: #37ee93;
-            margin-bottom: 32px;
+            margin-bottom: 28px;
+            font-size: 1.02em;
         }
         button {
             background: #4cbeff;
@@ -57,8 +61,9 @@
             background: #1fa1ff;
         }
         .links {
-            margin-top: 32px;
+            margin-top: 30px;
             color: #b6b6b6;
+            font-size: 0.98em;
         }
         .links a {
             color: #74cfff;
@@ -68,31 +73,65 @@
             position: absolute;
             top: 20px;
             right: 24px;
+            display: flex;
+            gap: 6px;
+            z-index: 10;
         }
-        #lang-switcher button {
+        .lang-btn {
             background: #23272e;
             color: #aaa;
             border: 1px solid #333;
-            border-radius: 4px;
-            padding: 4px 12px;
-            margin-left: 6px;
-            font-size: 0.95em;
+            border-radius: 6px;
+            padding: 4px 10px 4px 10px;
+            margin: 0;
+            font-size: 1.13em;
+            display: flex;
+            align-items: center;
             cursor: pointer;
-            transition: background 0.15s, color 0.15s;
+            transition: background 0.15s, color 0.15s, border 0.15s;
         }
-        #lang-switcher button.active,
-        #lang-switcher button:hover {
+        .lang-btn.active,
+        .lang-btn:hover {
             background: #4cbeff;
             color: #fff;
+            border-color: #4cbeff;
+        }
+        .lang-btn img {
+            width: 22px;
+            height: 16px;
+            margin-right: 5px;
+            border-radius: 2px;
+            vertical-align: middle;
+        }
+        /* Додаємо менший шрифт для дуже довгих текстів */
+        @media (max-width: 600px) {
+            .container {
+                max-width: 96vw;
+                padding: 10px;
+            }
+            h1 {
+                font-size: 1.15rem;
+            }
+            .desc, .desc-green, .links {
+                font-size: 0.92em;
+            }
+            #lang-switcher {
+                top: 12px;
+                right: 8px;
+            }
+            img.logo {
+                width: 70px;
+                margin-top: 18px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div id="lang-switcher">
-            <button id="lang-ua" onclick="setLang('ua')">UA</button>
-            <button id="lang-en" onclick="setLang('en')">EN</button>
-            <button id="lang-pl" onclick="setLang('pl')">PL</button>
+            <button class="lang-btn" id="lang-ua" onclick="setLang('ua')" title="Українська"><img src="https://hatscripts.github.io/circle-flags/flags/ua.svg">UA</button>
+            <button class="lang-btn" id="lang-en" onclick="setLang('en')" title="English"><img src="https://hatscripts.github.io/circle-flags/flags/gb.svg">EN</button>
+            <button class="lang-btn" id="lang-pl" onclick="setLang('pl')" title="Polski"><img src="https://hatscripts.github.io/circle-flags/flags/pl.svg">PL</button>
         </div>
         <img src="logo.png" class="logo" alt="MindDrive.Life Logo">
         <h1 id="mainTitle">Аварійний доступ до проєкту MindDrive.Life</h1>
@@ -138,7 +177,6 @@
             }
         };
 
-        // Детекція мови браузера
         function getBrowserLang() {
             const lang = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
             if (lang.startsWith('uk')) return 'ua';
@@ -147,31 +185,25 @@
             return 'en';
         }
 
-        // Встановлення мови
         function setLang(lang) {
             window.currentLang = lang;
-            // Кнопки
             ['ua', 'en', 'pl'].forEach(l => {
                 document.getElementById('lang-' + l).classList.remove('active');
             });
             document.getElementById('lang-' + lang).classList.add('active');
-            // Тексти
             document.getElementById('mainTitle').innerHTML = langData[lang].mainTitle;
             document.getElementById('mainDesc').innerHTML = langData[lang].mainDesc;
             document.getElementById('mainGreen').innerHTML = langData[lang].mainGreen;
             document.getElementById('webAuthnBtn').innerHTML = langData[lang].webAuthnBtn;
-            // Лінки — за потреби
             document.querySelector('.links div:first-child').innerHTML = langData[lang].domainLabel + ' <a href="https://sos.minddrive.life" target="_blank">sos.minddrive.life</a>';
             document.querySelector('.links div:last-child').innerHTML = langData[lang].ghLabel + ' <a href="https://0scorp919.github.io/sos" target="_blank">0scorp919.github.io/sos</a>';
         }
 
-        // При завантаженні
         document.addEventListener('DOMContentLoaded', function() {
             let defaultLang = getBrowserLang();
             setLang(defaultLang);
         });
 
-        // Твоя функція для WebAuthn
         function startAuth() {
             alert('WebAuthn і OTP тут буде наступним кроком!');
         }
