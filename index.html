@@ -103,7 +103,13 @@
             border-radius: 2px;
             vertical-align: middle;
         }
-        /* Додаємо менший шрифт для дуже довгих текстів */
+        /* Менший шрифт для польської */
+        body.pl .container, body.pl h1, body.pl .desc, body.pl .desc-green {
+            font-size: 0.92em !important;
+        }
+        body.pl h1 {
+            font-size: 1.15rem !important;
+        }
         @media (max-width: 600px) {
             .container {
                 max-width: 96vw;
@@ -187,6 +193,8 @@
 
         function setLang(lang) {
             window.currentLang = lang;
+            document.body.classList.remove('ua', 'en', 'pl');
+            document.body.classList.add(lang);
             ['ua', 'en', 'pl'].forEach(l => {
                 document.getElementById('lang-' + l).classList.remove('active');
             });
