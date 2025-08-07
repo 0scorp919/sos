@@ -129,7 +129,6 @@
                 margin-top: 18px;
             }
         }
-        /* Step fields */
         input[type="text"].otp-input {
             font-size: 1.3em;
             padding: 7px 16px;
@@ -164,14 +163,14 @@
             Все працює без сервера. Дані не покидають пристрій.
         </div>
         <button id="webAuthnBtn" onclick="startAuth()">Увійти через YubiKey</button>
-        <!-- Step 1: OTP1 -->
+        <!-- OTP1 -->
         <div id="step-otp1" style="display:none;">
             <div class="desc" id="otp1Desc"></div>
             <input type="text" id="otp1" maxlength="6" inputmode="numeric" class="otp-input">
             <button class="step-btn" onclick="submitOtp1()">OK</button>
             <div class="desc" id="otp1Err" style="color:#ff6262;margin-top:8px"></div>
         </div>
-        <!-- Step 2: OTP2 -->
+        <!-- OTP2 -->
         <div id="step-otp2" style="display:none;">
             <div class="desc" id="otp2Desc"></div>
             <input type="text" id="otp2" maxlength="6" inputmode="numeric" class="otp-input">
@@ -189,7 +188,7 @@
         </div>
     </div>
     <script>
-        // Мовні дані
+        // ---- Мовні дані ----
         const langData = {
             ua: {
                 mainTitle: "Аварійний доступ до проєкту MindDrive.Life",
@@ -236,7 +235,6 @@
             if (lang.startsWith('en')) return 'en';
             return 'en';
         }
-
         function setLang(lang) {
             window.currentLang = lang;
             document.body.classList.remove('ua', 'en', 'pl');
@@ -261,7 +259,7 @@
             setLang(defaultLang);
         });
 
-        // --- AES+PBKDF2 функції ---
+        // ----- AES+PBKDF2 -----
         async function deriveKeyFromOtp(otp) {
             const salt = new TextEncoder().encode("sos-minddrive.life");
             const keyMaterial = await window.crypto.subtle.importKey(
@@ -279,24 +277,22 @@
             return new TextDecoder().decode(result);
         }
 
-        // --- Зашифровані блоки ---
-        const encryptedKey2 = {
-          cipher: "Ns+K+nm6TtAl6US2WCRylzSLHGoJ9AhAfAr6JAmrKcPXTpPqbI8=",
-          iv: "KZz0GGmKpZqMZAY3"
+        // ---- Блоки ----
+        const encryptedTOTP2 = {
+          cipher: "FZFMgYFJsg+Qys1k0ivPsGIXI4gXb5ACk6H8N2cYgB0=",
+          iv: "Skgw8A4oxHZW3HXY"
         };
         const encryptedFinalKey = {
-          cipher: "tclsm/PU6y0a7dIbAFJlf3nXKuS6pB7kYpPtfZ06BznM8uD4VX8=",
-          iv: "YOf7gdacTAdl65Wx"
+          cipher: "0lQ1bJVtrNx0OE6QTuZwRLv1Q5YAJzDdQ6eSYlJq7T9v68M3Dgo=",
+          iv: "V8grV1PDSyIMAMGI"
         };
         const encryptedSecrets = {
-          cipher: "BWn2wr6jz01oYVnnoPsmqHzg9PgXtzCQD8lHt9Q5nFwr7kBzJdBThMYpJr8YtuZxRxpj1XhzjVsJkvwKtwYyMWEm1bhd4MIrZ5bUK/7LuWylkK7B3zo=",
-          iv: "q+1U0LczV9fL6CVI"
+          cipher: "pUs2qukC5llh5MGaRm5XdlzKAFnsTkgQq1I4aym8xr7Oks8pWl5E3DJqG89ijUWrNKnqeeVu6Erw61wqtxSLzu+gYMsJbZ3a3r33hrc=",
+          iv: "JTXkQCu5SPKkmCPd"
         };
 
-        // --- WebAuthn (для демо, поки тільки імітація) ---
+        // ---- WebAuthn (для демо) ----
         function startAuth() {
-            // Тут має бути реальна перевірка WebAuthn/YubiKey
-            // Для демо — одразу переходимо до otp1
             document.getElementById('webAuthnBtn').style.display = "none";
             document.getElementById('step-otp1').style.display = "";
             document.getElementById('otp1Err').innerHTML = "";
@@ -310,8 +306,8 @@
             let otp1 = document.getElementById("otp1").value.trim();
             deriveKeyFromOtp(otp1).then(async key1 => {
                 try {
-                    let key2 = await decryptAes(encryptedKey2.cipher, encryptedKey2.iv, key1);
-                    window.level2key = key2;
+                    let TOTP2 = await decryptAes(encryptedTOTP2.cipher, encryptedTOTP2.iv, key1);
+                    window.level2totp = TOTP2;
                     document.getElementById("step-otp1").style.display = "none";
                     document.getElementById("step-otp2").style.display = "";
                     document.getElementById('otp2Err').innerHTML = "";
@@ -326,8 +322,8 @@
             let otp2 = document.getElementById("otp2").value.trim();
             deriveKeyFromOtp(otp2).then(async key2 => {
                 try {
-                    let keyFinal = await decryptAes(encryptedFinalKey.cipher, encryptedFinalKey.iv, key2);
-                    let secretsKey = await window.crypto.subtle.importKey("raw", new TextEncoder().encode(keyFinal), {name: "AES-GCM"}, false, ["decrypt"]);
+                    let finalKey = await decryptAes(encryptedFinalKey.cipher, encryptedFinalKey.iv, key2);
+                    let secretsKey = await window.crypto.subtle.importKey("raw", new TextEncoder().encode(finalKey), {name: "AES-GCM"}, false, ["decrypt"]);
                     let secrets = await decryptAes(encryptedSecrets.cipher, encryptedSecrets.iv, secretsKey);
                     document.getElementById("step-otp2").style.display = "none";
                     document.getElementById("finalSecrets").style.display = "";
